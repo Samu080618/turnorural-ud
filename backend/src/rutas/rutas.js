@@ -5,6 +5,8 @@ const ControlJornada = require('../control/ControlJornada');
 const ControlTurno = require('../control/ControlTurno');
 const ControlAtencion = require('../control/ControlAtencion');
 const ControlNovedad = require('../control/ControlNovedad');
+const ControlRecuperacion = require('../control/ControlRecuperacion');
+const ControlPerfil = require('../control/ControlPerfil');
 const PuestoSalud = require('../entidades/PuestoSalud');
 const { requiereSesion, COOKIE } = require('../seguridad/autenticacion');
 
@@ -12,7 +14,7 @@ const r = express.Router();
 const h = (fn) => (req, res, next) => Promise.resolve(fn(req, res)).catch(next);
 const opcionesCookie = { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', path: '/' };
 
-// ---------------- Módulo 01 (Sprint 1, corregido HU-0105)
+// ---------------- Módulo 01 (Sprint 1: HU-0101 a HU-0104; HU-0105 corregida en el Sprint 2)
 r.get('/puestos', h(async (req, res) => res.json(await PuestoSalud.listar())));
 r.post('/auth/registro', h(async (req, res) => res.status(201).json({ idUsuario: await ControlSesion.registrar(req.body) })));
 r.post('/auth/login', h(async (req, res) => {
@@ -24,6 +26,10 @@ r.post('/auth/logout', requiereSesion(), h(async (req, res) => {
   await ControlSesion.cerrarSesion(req.sesion.idSesion, req.sesion.idUsuario, req.body && req.body.motivo === 'inactividad' ? 'expirada' : 'cerrada');
   res.clearCookie(COOKIE, opcionesCookie).status(204).end();
 }));
+r.post('/auth/recuperar', h(async (req, res) => res.json(await ControlRecuperacion.solicitarCodigo(req.body.numeroDocumento))));
+r.post('/auth/restablecer', h(async (req, res) => res.json(await ControlRecuperacion.restablecer(req.body.numeroDocumento, req.body.codigo, req.body.nuevaContrasena))));
+r.get('/perfil', requiereSesion(), h(async (req, res) => res.json(await ControlPerfil.consultar(req.sesion))));
+r.put('/perfil', requiereSesion(), h(async (req, res) => res.json(await ControlPerfil.actualizar(req.sesion, req.body))));
 
 // ---------------- Sprint 2: HU-0501 y Módulo 02
 r.post('/jornadas', requiereSesion('Encargado'), h(async (req, res) => res.status(201).json(await ControlJornada.crearJornada(req.sesion, req.body))));

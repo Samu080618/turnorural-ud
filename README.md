@@ -53,5 +53,7 @@ Variables opcionales: `SMS_API_URL` y `SMS_API_KEY` (proveedor real de SMS; sin 
 
 ```bash
 cd backend
-npm test            # 42 casos de prueba, uno o más por cada criterio de aceptación
+npm test            # 58 casos de prueba (Módulo 01, Sprint 2 y Sprint 3), uno o más por criterio de aceptación
 ```
+
+Recuperar contraseña en la demostración: como el SMS es simulado, la pantalla muestra el código de 6 dígitos (en producción, con SMS_API_URL configurado, solo llega al celular).

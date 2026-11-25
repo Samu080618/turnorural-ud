@@ -53,5 +53,18 @@ class Usuario {
     await bd().ejecutar('INSERT INTO registro_acceso (id_usuario, evento, fecha_hora, direccion_ip) VALUES (?, ?, ?, ?)',
       [idUsuario, evento, fechaHora, ip || null]);
   }
+  /** HU-0104: actualiza los datos editables del perfil (documento y rol no se modifican). */
+  static async actualizarPerfil(idUsuario, d, esPaciente) {
+    return bd().transaccion(async (cx) => {
+      await bd().ejecutar('UPDATE perfil SET nombres = ?, apellidos = ?, celular = ? WHERE id_usuario = ?', [d.nombres, d.apellidos, d.celular, idUsuario], cx);
+      if (esPaciente) await bd().ejecutar('UPDATE paciente SET vereda = ? WHERE id_usuario = ?', [d.vereda, idUsuario], cx);
+    });
+  }
+
+  /** HU-0103: guarda la nueva contraseña cifrada y desbloquea la cuenta. */
+  static async cambiarContrasena(idUsuario, hashContrasena, ahora) {
+    await bd().ejecutar('UPDATE credencial SET hash_contrasena = ?, intentos_fallidos = 0, bloqueado_hasta = NULL, fecha_ultimo_cambio = ? WHERE id_usuario = ?',
+      [hashContrasena, ahora, idUsuario]);
+  }
 }
 module.exports = Usuario;

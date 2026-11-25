@@ -1,0 +1,29 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TurnoRural - Mi perfil</title><link rel="stylesheet" href="/css/estilos.css"></head>
+<body><header><h1>TurnoRural</h1><nav id="menu"><span id="nombreUsuario"></span><button id="btnSalir">Cerrar sesión</button></nav></header><main style="max-width:520px">
+<div class="tarjeta"><h2>Mi perfil</h2><div id="msg" class="msg"></div>
+<p><b>Documento:</b> <span id="vdoc"></span><br><b>Rol:</b> <span id="vrol"></span></p>
+<form id="f"><label for="nom">Nombres</label><input id="nom" maxlength="50" required>
+<label for="ape">Apellidos</label><input id="ape" maxlength="50" required>
+<label for="cel">Celular (10 dígitos)</label><input id="cel" inputmode="numeric" maxlength="10" required>
+<div id="cver"><label for="ver">Vereda o sector</label><input id="ver" maxlength="60"></div><br>
+<button class="btn" style="width:100%">Guardar cambios</button></form></div></main>
+<script src="/js/comun.js"></script><script>
+// HU-0104 Edición del perfil (CU-04): UIPerfil
+const MENUS = {
+  Paciente: [['/paciente/', 'Pedir turno'], ['/paciente/mi-turno.html', 'Mi turno'], ['/paciente/historial.html', 'Historial']],
+  Encargado: [['/encargado/', 'Lista del día'], ['/encargado/jornada.html', 'Crear cupos'], ['/encargado/novedad.html', 'Reportar novedad']] };
+function pintar(p) {
+  vdoc.textContent = `${p.tipoDocumento} ${p.numeroDocumento}`; vrol.textContent = p.rol;
+  nom.value = p.nombres; ape.value = p.apellidos; cel.value = p.celular;
+  cver.style.display = p.rol === 'Paciente' ? '' : 'none'; ver.value = p.vereda || '';
+  nombreUsuario.textContent = p.nombres;
+}
+iniciarSesionSegura().then(async (s) => {
+  btnSalir.insertAdjacentHTML('beforebegin', MENUS[s.rol].map(([h, t]) => `<a href="${h}">${t}</a>`).join('') + '<a href="/perfil.html">Mi perfil</a>');
+  pintar(await api('GET', '/perfil'));
+});
+f.onsubmit = async (e) => { e.preventDefault();
+  if (!/^3\d{9}$/.test(cel.value.trim())) return mostrar('msg', 'El celular debe tener 10 dígitos y empezar por 3', 'error');
+  try { const r = await api('PUT', '/perfil', { nombres: nom.value, apellidos: ape.value, celular: cel.value, vereda: ver.value });
+    pintar(r.perfil); mostrar('msg', r.mensaje, 'ok'); } catch (err) { mostrar('msg', err.message, 'error'); } };
+</script></body></html>

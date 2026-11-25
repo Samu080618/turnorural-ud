@@ -3,15 +3,20 @@ const bcrypt = require('bcryptjs');
 const Usuario = require('../entidades/Usuario');
 const Sesion = require('../entidades/Sesion');
 const PuestoSalud = require('../entidades/PuestoSalud');
-const { fechaHora, minutosDesde, ErrorNegocio } = require('../util');
+const { reloj, fechaHora, minutosDesde, ErrorNegocio } = require('../util');
 
-/** Control del Módulo 01 necesario para los sprints 2 y 3 (registro, ingreso y cierre de sesión). */
+/** Control del Módulo 01: registro, ingreso, validación y cierre de sesión. La recuperación está en ControlRecuperacion y el perfil en ControlPerfil. */
 class ControlSesion {
+  /** Regla del registro (HU-0101), reutilizada al cambiar la contraseña (HU-0103). */
+  static validarContrasena(c) {
+    if (!/^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(c || '')) throw new ErrorNegocio(400, 'DATOS', 'La contraseña debe tener mínimo 8 caracteres, con letras y números');
+  }
+
   static async registrar(d) {
     if (!['CC', 'TI', 'CE'].includes(d.tipoDocumento)) throw new ErrorNegocio(400, 'DATOS', 'Tipo de documento no válido');
     if (!/^\d{5,15}$/.test(d.numeroDocumento || '')) throw new ErrorNegocio(400, 'DATOS', 'Número de documento no válido');
     if (!/^3\d{9}$/.test(d.celular || '')) throw new ErrorNegocio(400, 'DATOS', 'El celular debe tener 10 dígitos y empezar por 3');
-    if (!/^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(d.contrasena || '')) throw new ErrorNegocio(400, 'DATOS', 'La contraseña debe tener mínimo 8 caracteres, con letras y números');
+    ControlSesion.validarContrasena(d.contrasena);
     if (!d.nombres || !d.apellidos) throw new ErrorNegocio(400, 'DATOS', 'Nombres y apellidos son obligatorios');
     if (!d.aceptaDatos) throw new ErrorNegocio(400, 'DATOS', 'Debe aceptar el tratamiento de datos (Ley 1581 de 2012)');
     if (d.rol === 'Paciente' && !d.vereda) throw new ErrorNegocio(400, 'DATOS', 'Indique su vereda o sector');
@@ -34,7 +39,7 @@ class ControlSesion {
       throw new ErrorNegocio(423, 'BLOQUEADA', 'La cuenta está bloqueada por 15 minutos');
     if (!(await bcrypt.compare(contrasena || '', c.hash_contrasena))) {
       const n = c.intentos_fallidos + 1;
-      const bloqueo = n >= 5 ? fechaHora(new Date(Date.now() + 15 * 60000)) : null;
+      const bloqueo = n >= 5 ? fechaHora(new Date(reloj.ahora().getTime() + 15 * 60000)) : null;
       await Usuario.actualizarIntentos(u.id_usuario, n >= 5 ? 0 : n, bloqueo);
       await Usuario.registrarAcceso(u.id_usuario, n >= 5 ? 'bloqueo' : 'login_fallido', fechaHora(), ip);
       throw n >= 5 ? new ErrorNegocio(423, 'BLOQUEADA', 'La cuenta está bloqueada por 15 minutos') : generico;

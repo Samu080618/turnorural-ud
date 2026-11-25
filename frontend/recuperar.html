@@ -1,0 +1,27 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TurnoRural - Recuperar contraseña</title><link rel="stylesheet" href="/css/estilos.css"></head>
+<body><header><h1>TurnoRural</h1><nav><a href="/index.html">Ingresar</a></nav></header><main style="max-width:440px">
+<div class="tarjeta" id="paso1"><h2>Recuperar contraseña</h2><div id="msg1" class="msg"></div>
+<p>Escribe tu número de documento. Te enviaremos un código de 6 dígitos por mensaje de texto (SMS) al celular registrado.</p>
+<form id="f1"><label for="doc">Número de documento</label><input id="doc" inputmode="numeric" required><br><br>
+<button class="btn" style="width:100%">Enviar código</button></form></div>
+<div class="tarjeta" id="paso2" style="display:none"><h2>Crear nueva contraseña</h2><div id="msg2" class="msg"></div>
+<form id="f2"><label for="cod">Código recibido por SMS</label><input id="cod" inputmode="numeric" maxlength="6" required>
+<label for="pw">Nueva contraseña (mínimo 8, letras y números)</label><input id="pw" type="password" required>
+<label for="pw2">Repite la nueva contraseña</label><input id="pw2" type="password" required><br><br>
+<button class="btn" style="width:100%">Cambiar contraseña</button></form>
+<p class="centro"><a href="#" id="otro">Pedir otro código</a></p></div></main>
+<script src="/js/comun.js"></script><script>
+// HU-0103 Recuperación de contraseña (CU-03): UIRecuperarContrasena
+async function pedirCodigo() {
+  const r = await api('POST', '/auth/recuperar', { numeroDocumento: doc.value.trim() });
+  paso1.style.display = 'none'; paso2.style.display = '';
+  mostrar('msg2', r.mensaje + (r.codigoDemo ? ` (Modo demostración, SMS simulado: el código es ${r.codigoDemo})` : ''), 'ok');
+}
+f1.onsubmit = async (e) => { e.preventDefault(); try { await pedirCodigo(); } catch (err) { mostrar('msg1', err.message, 'error'); } };
+otro.onclick = async (e) => { e.preventDefault(); try { await pedirCodigo(); cod.value = ''; } catch (err) { mostrar('msg2', err.message, 'error'); } };
+f2.onsubmit = async (e) => { e.preventDefault();
+  if (pw.value !== pw2.value) return mostrar('msg2', 'Las contraseñas no coinciden', 'error');
+  try { await api('POST', '/auth/restablecer', { numeroDocumento: doc.value.trim(), codigo: cod.value.trim(), nuevaContrasena: pw.value });
+    location.href = '/index.html?motivo=contrasena'; }
+  catch (err) { mostrar('msg2', err.message, 'error'); if (['CODIGO_ANULADO', 'CODIGO_VENCIDO', 'SIN_CODIGO'].includes(err.codigo)) cod.value = ''; } };
+</script></body></html>

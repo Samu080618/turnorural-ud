@@ -24,6 +24,10 @@ class Sesion {
   static async finalizar(idSesion, estado, ahora) {
     await bd().ejecutar("UPDATE sesion SET estado = ?, fecha_fin = ? WHERE id_sesion = ? AND estado = 'activa'", [estado, ahora, idSesion]);
   }
+  /** HU-0103: al cambiar la contraseña se cierran todas las sesiones abiertas del usuario. */
+  static async finalizarTodas(idUsuario, ahora) {
+    await bd().ejecutar("UPDATE sesion SET estado = 'cerrada', fecha_fin = ? WHERE id_usuario = ? AND estado = 'activa'", [ahora, idUsuario]);
+  }
 }
 Sesion.MINUTOS_INACTIVIDAD = MINUTOS_INACTIVIDAD;
 module.exports = Sesion;
