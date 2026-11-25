@@ -1,0 +1,15 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TurnoRural - Ingresar</title><link rel="stylesheet" href="/css/estilos.css"></head>
+<body><header><h1>TurnoRural</h1></header><main style="max-width:440px">
+<div class="tarjeta"><h2>Ingresar</h2><div id="msg" class="msg"></div>
+<form id="f"><label for="doc">Número de documento</label><input id="doc" inputmode="numeric" required>
+<label for="pw">Contraseña</label><input id="pw" type="password" required><br><br>
+<button class="btn" style="width:100%">Ingresar</button></form>
+<p class="centro"><a href="/registro.html">Crear cuenta</a></p></div></main>
+<script src="/js/comun.js"></script><script>
+const m = new URLSearchParams(location.search).get('motivo');
+if (m === 'inactividad') mostrar('msg', 'Tu sesión se cerró por inactividad. Ingresa de nuevo.', 'aviso');
+if (m === 'salida') mostrar('msg', 'Cerraste tu sesión de forma segura.', 'ok');
+document.getElementById('f').onsubmit = async (e) => { e.preventDefault();
+  try { const r = await api('POST', '/auth/login', { numeroDocumento: doc.value.trim(), contrasena: pw.value });
+    location.href = r.rol === 'Paciente' ? '/paciente/' : '/encargado/'; } catch (err) { mostrar('msg', err.message, 'error'); } };
+</script></body></html>

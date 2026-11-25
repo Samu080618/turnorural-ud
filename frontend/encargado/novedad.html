@@ -1,0 +1,22 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TurnoRural - Reportar novedad</title><link rel="stylesheet" href="/css/estilos.css"></head>
+<body><header><h1>TurnoRural · Encargado</h1><nav><span id="nombreUsuario"></span><a href="/encargado/">Lista del día</a><a href="/encargado/jornada.html">Crear cupos</a><a href="/encargado/novedad.html">Reportar novedad</a><button id="btnSalir">Cerrar sesión</button></nav></header><main>
+<div class="tarjeta" style="max-width:560px"><h2>Reportar una novedad</h2><p class="gris">Se avisará por SMS a todos los pacientes que tienen turno en espera en la jornada elegida.</p>
+<div id="msg" class="msg"></div><form id="f">
+<label for="jor">Jornada</label><select id="jor" required></select>
+<label for="tipo">Tipo de novedad</label><select id="tipo" required><option value="">Selecciona…</option><option value="MedicoNoAsiste">El médico no asistirá (cancela la jornada)</option><option value="CierrePuesto">El puesto no abrirá (cancela la jornada)</option><option value="Retraso">Retraso en la atención</option><option value="Otra">Otro aviso</option></select>
+<div id="cMin" style="display:none"><label for="min">Minutos de retraso (15 a 240)</label><input id="min" type="number" min="15" max="240"></div>
+<label for="desc">Descripción (10 a 300 caracteres)</label><textarea id="desc" rows="3" maxlength="300" required></textarea><br><br>
+<button class="btn" style="width:100%">Reportar y avisar</button></form></div>
+<dialog id="dlg"><h2>Confirmar novedad</h2><p id="dP"></p><div class="fila"><button class="btn sec" id="dNo">Volver</button><button class="btn peligro" id="dSi">Confirmar</button></div></dialog>
+</main><script src="/js/comun.js"></script><script>
+tipo.onchange = () => cMin.style.display = tipo.value === 'Retraso' ? '' : 'none';
+async function cargar() { const l = (await api('GET', '/jornadas/puesto')).filter((j) => j.estado === 'Abierta' || j.estado === 'EnAtencion');
+  jor.innerHTML = l.map((j) => `<option value="${j.id_jornada}">${fechaLarga(String(j.fecha).slice(0, 10))} (${j.cupos_totales - j.cupos_disponibles} turnos)</option>`).join('') || '<option value="">No hay jornadas abiertas</option>'; }
+f.onsubmit = (e) => { e.preventDefault(); dP.textContent = (tipo.value === 'MedicoNoAsiste' || tipo.value === 'CierrePuesto') ? 'La jornada se cancelará, los turnos en espera quedarán cancelados y se enviará un SMS a cada paciente. ¿Continuar?' : 'Se enviará un SMS a cada paciente con turno en espera. ¿Continuar?'; dlg.showModal(); };
+dNo.onclick = () => dlg.close();
+dSi.onclick = async () => { dlg.close();
+  try { const r = await api('POST', '/novedades', { idJornada: jor.value, tipo: tipo.value, descripcion: desc.value, minutosRetraso: min.value ? Number(min.value) : undefined });
+    mostrar('msg', `Novedad registrada. SMS enviados: ${r.smsEnviados} de ${r.turnosAfectados}` + (r.smsFallidos ? ` (${r.smsFallidos} fallaron; llame a esos pacientes).` : '.') + (r.jornadaCancelada ? ' La jornada quedó cancelada.' : ''), r.smsFallidos ? 'aviso' : 'ok');
+    f.reset(); cargar(); } catch (err) { mostrar('msg', err.message, 'error'); } };
+iniciarSesionSegura('Encargado').then(cargar);
+</script></body></html>

@@ -1,0 +1,19 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TurnoRural - Crear cupos</title><link rel="stylesheet" href="/css/estilos.css"></head>
+<body><header><h1>TurnoRural · Encargado</h1><nav><span id="nombreUsuario"></span><a href="/encargado/">Lista del día</a><a href="/encargado/jornada.html">Crear cupos</a><a href="/encargado/novedad.html">Reportar novedad</a><button id="btnSalir">Cerrar sesión</button></nav></header><main>
+<div class="tarjeta" style="max-width:520px"><h2>Crear los cupos de un día</h2><p class="gris">Desde hoy hasta 14 días adelante. Horario entre 06:00 y 18:00. Entre 1 y 40 cupos.</p>
+<div id="msg" class="msg"></div><form id="f">
+<label for="fecha">Fecha</label><input id="fecha" type="date" required>
+<div class="fila"><div><label for="hi">Hora de inicio</label><input id="hi" type="time" value="07:00" required></div><div><label for="hf">Hora de fin</label><input id="hf" type="time" value="12:00" required></div></div>
+<label for="cupos">Cantidad de cupos</label><input id="cupos" type="number" min="1" max="40" value="20" required><br><br>
+<button class="btn" style="width:100%">Crear cupos</button></form></div>
+<div class="tarjeta"><h2>Jornadas programadas</h2><div id="lista"></div></div>
+</main><script src="/js/comun.js"></script><script>
+const hoy = new Date(); fecha.min = hoy.toLocaleDateString('en-CA'); const lim = new Date(); lim.setDate(lim.getDate() + 14); fecha.max = lim.toLocaleDateString('en-CA');
+async function listar() { const l = await api('GET', '/jornadas/puesto');
+  lista.innerHTML = l.length ? '<table><tr><th>Fecha</th><th>Horario</th><th>Cupos</th><th>Libres</th><th>Estado</th></tr>' + l.map((j) => `<tr><td>${fechaLarga(String(j.fecha).slice(0, 10))}</td><td>${String(j.hora_inicio).slice(0, 5)} a ${String(j.hora_fin).slice(0, 5)}</td><td>${j.cupos_totales}</td><td>${j.cupos_disponibles}</td><td>${j.estado}</td></tr>`).join('') + '</table>' : '<p>No hay jornadas programadas.</p>'; }
+f.onsubmit = async (e) => { e.preventDefault();
+  try { const j = await api('POST', '/jornadas', { fecha: fecha.value, horaInicio: hi.value, horaFin: hf.value, cuposTotales: Number(cupos.value) });
+    mostrar('msg', `Se crearon ${j.cupos_totales} cupos para el ${fechaLarga(String(j.fecha).slice(0, 10))}. Los pacientes ya pueden pedir turno.`); listar(); }
+  catch (err) { mostrar('msg', err.message, 'error'); } };
+iniciarSesionSegura('Encargado').then(listar);
+</script></body></html>

@@ -1,0 +1,28 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TurnoRural - Mi turno</title><link rel="stylesheet" href="/css/estilos.css"></head>
+<body><header><h1>TurnoRural</h1><nav><span id="nombreUsuario"></span><a href="/paciente/">Pedir turno</a><a href="/paciente/mi-turno.html">Mi turno</a><a href="/paciente/historial.html">Historial</a><button id="btnSalir">Cerrar sesión</button></nav></header><main>
+<div id="msg" class="msg"></div><div id="cont">Cargando…</div>
+<p class="centro"><button class="btn sec" id="act">Actualizar</button></p>
+<dialog id="dlg"><h2>Cancelar turno</h2><p>Tu cupo quedará libre para otra persona. Esta acción no se puede deshacer.</p>
+<label for="motivo">Motivo</label><select id="motivo"><option value="">Selecciona…</option><option>Ya no lo necesito</option><option>No tengo transporte</option><option>Me siento mejor</option><option>Tengo otro compromiso</option><option>Otro</option></select><br><br>
+<div class="fila"><button class="btn sec" id="no">Volver</button><button class="btn peligro" id="si">Cancelar turno</button></div></dialog>
+</main><script src="/js/comun.js"></script><script>
+let actual = null;
+async function cargar() {
+  const l = await api('GET', '/turnos/mios');
+  if (!l.length) { cont.innerHTML = '<div class="tarjeta centro"><p>No tienes turnos activos.</p><a href="/paciente/">Pedir un turno</a></div>'; return; }
+  cont.innerHTML = l.map((t) => `<div class="tarjeta centro"><p class="gris">${fechaLarga(t.fecha)} · ${esc(t.puesto)}</p>
+    <div class="grande">No. ${t.numero}</div>${chip(t.estado)}
+    ${t.estado === 'Asignado' ? `<p style="font-size:20px">${t.turnosAntes === 0 ? '<b>¡Eres el siguiente!</b>' : `Hay <b>${t.turnosAntes}</b> turnos antes del tuyo`}</p>
+      <p>Tiempo estimado de espera: <b>${t.minutosEstimados} min</b> · hora aproximada ${t.horaEstimada}</p>` : ''}
+    ${t.novedades.map((n) => `<div class="msg aviso">Aviso del puesto: ${esc(n.descripcion)}</div>`).join('')}
+    <p class="gris">Consultado a las ${t.consultadoA}</p>
+    ${t.estado === 'Asignado' ? `<button class="btn peligro" onclick="abrir(${t.idTurno})">Cancelar turno</button>` : ''}</div>`).join('');
+}
+function abrir(id) { actual = id; motivo.value = ''; dlg.showModal(); }
+no.onclick = () => dlg.close();
+si.onclick = async () => { if (!motivo.value) { motivo.focus(); return; } dlg.close();
+  try { await api('POST', `/turnos/${actual}/cancelar`, { motivo: motivo.value }); mostrar('msg', 'Tu turno fue cancelado y el cupo quedó libre.'); cargar(); }
+  catch (e) { mostrar('msg', e.message, 'error'); } };
+act.onclick = cargar;
+iniciarSesionSegura('Paciente').then(cargar);
+</script></body></html>

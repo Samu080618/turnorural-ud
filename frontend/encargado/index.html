@@ -1,0 +1,39 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TurnoRural - Lista del día</title><link rel="stylesheet" href="/css/estilos.css"></head>
+<body><header><h1>TurnoRural · Encargado</h1><nav><span id="nombreUsuario"></span><a href="/encargado/">Lista del día</a><a href="/encargado/jornada.html">Crear cupos</a><a href="/encargado/novedad.html">Reportar novedad</a><button id="btnSalir">Cerrar sesión</button></nav></header><main>
+<div id="msg" class="msg"></div>
+<div class="tarjeta" id="cab">Cargando…</div>
+<div class="contadores" id="cont"></div><br>
+<div class="tarjeta"><div class="fila"><div><label for="fEstado">Estado</label><select id="fEstado"><option value="">Todos</option><option value="Asignado">En espera</option><option value="Atendido">Atendido</option><option value="NoAsistio">No llegó</option><option value="Cancelado">Cancelado</option></select></div>
+<div><label for="fDoc">Buscar por documento</label><input id="fDoc" inputmode="numeric"></div><div><label>&nbsp;</label><button class="btn sec" id="act">Actualizar</button></div></div>
+<div id="tabla" style="margin-top:12px;overflow-x:auto"></div></div>
+<dialog id="dlg"><h2 id="dT"></h2><p id="dP"></p><div class="fila"><button class="btn sec" id="dNo">Volver</button><button class="btn" id="dSi">Confirmar</button></div></dialog>
+</main><script src="/js/comun.js"></script><script>
+let datos = null, accion = null;
+async function cargar() {
+  try { datos = await api('GET', `/atencion/hoy?estado=${fEstado.value}&documento=${encodeURIComponent(fDoc.value.trim())}`); } catch (e) {
+    cab.innerHTML = `<h2>${esc(e.message)}</h2>${e.codigo === 'SIN_JORNADA' ? '<a href="/encargado/jornada.html">Crear los cupos de hoy</a>' : ''}`; cont.innerHTML = ''; tabla.innerHTML = ''; return; }
+  const j = datos.jornada, c = datos.conteo, abierta = j.estado === 'Abierta' || j.estado === 'EnAtencion';
+  cab.innerHTML = `<div class="fila"><div><h2>${fechaLarga(j.fecha)} · ${esc(j.puesto)}</h2><p class="gris">Horario ${j.horaInicio} a ${j.horaFin} · ${j.cuposTotales} cupos · Estado: <b>${{ Abierta: 'Abierta', EnAtencion: 'En atención', Cerrada: 'Cerrada', Cancelada: 'Cancelada' }[j.estado]}</b>
+    ${datos.siguienteNumero ? ` · Siguiente en la fila: <b>No. ${datos.siguienteNumero}</b>` : ''}</p></div>
+    <div style="flex:0">${abierta ? '<button class="btn azul" onclick="pedirCierre()">Cerrar jornada</button>' : ''}</div></div>`;
+  cont.innerHTML = [['Total', c.Asignado + c.Atendido + c.NoAsistio + c.Cancelado + c.CanceladoNovedad], ['En espera', c.Asignado], ['Atendidos', c.Atendido], ['No llegó', c.NoAsistio], ['Cancelados', c.Cancelado + c.CanceladoNovedad]].map(([k, v]) => `<div><b>${v}</b>${k}</div>`).join('');
+  tabla.innerHTML = datos.turnos.length ? '<table><tr><th>No.</th><th>Paciente</th><th>Documento</th><th>Vereda</th><th>Hora aprox.</th><th>Estado</th><th>Acciones</th></tr>' + datos.turnos.map((t) =>
+    `<tr class="${t.numero === datos.siguienteNumero ? 'siguiente' : ''}"><td><b>${t.numero}</b></td><td>${esc(t.nombres)} ${esc(t.apellidos)}</td><td>${t.numero_documento}</td><td>${esc(t.vereda)}</td><td>${t.horaEstimada}</td><td>${chip(t.estado)}</td>
+    <td class="opc acciones">${t.estado === 'Asignado' && abierta ? `<button class="btn" onclick="pedir(${t.id_turno},${t.numero},'atendido')">Atendido</button><button class="btn peligro" onclick="pedir(${t.id_turno},${t.numero},'no-asistio')">No llegó</button>` : ''}
+    ${t.corregible ? `<button class="btn sec" onclick="pedir(${t.id_turno},${t.numero},'corregir')">Deshacer</button>` : ''}</td></tr>`).join('') + '</table>' : '<p>No hay turnos con ese filtro.</p>';
+}
+function pedir(id, num, tipo) {
+  accion = { url: `/atencion/turnos/${id}/${tipo}`, ok: { atendido: `Turno No. ${num} marcado como atendido.`, 'no-asistio': `Turno No. ${num} marcado como "no llegó".`, corregir: `Se deshizo la marca del turno No. ${num}.` }[tipo] };
+  dT.textContent = { atendido: 'Marcar como atendido', 'no-asistio': 'Marcar como "no llegó"', corregir: 'Deshacer la marca' }[tipo];
+  dP.textContent = `¿Confirmas esta acción para el turno No. ${num}?`; dlg.showModal(); }
+async function pedirCierre() {
+  const r = await api('GET', '/atencion/cierre');
+  accion = { url: `/atencion/jornadas/${r.idJornada}/cerrar`, body: { confirmar: true }, ok: 'La jornada quedó cerrada.' };
+  dT.textContent = 'Cerrar la jornada';
+  dP.innerHTML = `Atendidos: <b>${r.conteo.Atendido}</b> · No llegó: <b>${r.conteo.NoAsistio}</b> · Cancelados: <b>${r.conteo.Cancelado + r.conteo.CanceladoNovedad}</b><br>Quedan <b>${r.conteo.Asignado}</b> turnos en espera, que se marcarán como "no llegó". Después no se podrán hacer cambios.`;
+  dlg.showModal(); }
+dNo.onclick = () => dlg.close();
+dSi.onclick = async () => { dlg.close(); try { await api('POST', accion.url, accion.body); mostrar('msg', accion.ok); } catch (e) { mostrar('msg', e.message, 'error'); } cargar(); };
+fEstado.onchange = cargar; act.onclick = cargar; fDoc.oninput = () => { clearTimeout(window._b); window._b = setTimeout(cargar, 400); };
+iniciarSesionSegura('Encargado').then(cargar);
+</script></body></html>

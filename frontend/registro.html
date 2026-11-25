@@ -1,0 +1,19 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TurnoRural - Crear cuenta</title><link rel="stylesheet" href="/css/estilos.css"></head>
+<body><header><h1>TurnoRural</h1><nav><a href="/index.html">Ingresar</a></nav></header><main style="max-width:480px">
+<div class="tarjeta"><h2>Crear cuenta</h2><div id="msg" class="msg"></div><form id="f">
+<label>Rol</label><select id="rol"><option>Paciente</option><option>Encargado</option></select>
+<div class="fila"><div><label>Tipo</label><select id="tipo"><option>CC</option><option>TI</option><option>CE</option></select></div><div><label>Documento</label><input id="doc" inputmode="numeric" required></div></div>
+<label>Nombres</label><input id="nom" required><label>Apellidos</label><input id="ape" required>
+<label>Celular (10 dígitos)</label><input id="cel" inputmode="numeric" maxlength="10" required>
+<div id="cpac"><label>Vereda o sector</label><input id="ver"></div>
+<div id="cenc" style="display:none"><label>Puesto de salud</label><select id="puesto"></select><label>Código de autorización del puesto</label><input id="cod"></div>
+<label>Contraseña (mínimo 8, letras y números)</label><input id="pw" type="password" required>
+<label style="font-weight:normal"><input type="checkbox" id="acepto" style="width:auto"> Autorizo el tratamiento de mis datos personales y de salud (Ley 1581 de 2012)</label><br>
+<button class="btn" style="width:100%">Crear cuenta</button></form></div></main>
+<script src="/js/comun.js"></script><script>
+rol.onchange = () => { cpac.style.display = rol.value === 'Paciente' ? '' : 'none'; cenc.style.display = rol.value === 'Encargado' ? '' : 'none'; };
+api('GET', '/puestos').then((l) => puesto.innerHTML = l.map((p) => `<option value="${p.id_puesto}">${esc(p.nombre)}</option>`).join(''));
+f.onsubmit = async (e) => { e.preventDefault();
+  try { await api('POST', '/auth/registro', { rol: rol.value, tipoDocumento: tipo.value, numeroDocumento: doc.value.trim(), nombres: nom.value.trim(), apellidos: ape.value.trim(), celular: cel.value.trim(), vereda: ver.value.trim(), idPuesto: Number(puesto.value), codigoAutorizacion: cod.value, contrasena: pw.value, aceptaDatos: acepto.checked });
+    location.href = '/index.html'; } catch (err) { mostrar('msg', err.message, 'error'); } };
+</script></body></html>

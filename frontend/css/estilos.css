@@ -1,0 +1,27 @@
+:root{--verde:#15803d;--verde2:#dcfce7;--azul:#1d4ed8;--rojo:#b91c1c;--gris:#475569;--borde:#cbd5e1;--fondo:#f8fafc}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--fondo);color:#0f172a;font-size:17px}
+header{background:var(--verde);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+header h1{font-size:20px;margin:0}header nav a,header nav button{color:#fff;margin-left:10px;font-size:15px;background:none;border:0;text-decoration:underline;cursor:pointer;font-family:inherit}
+main{max-width:980px;margin:0 auto;padding:16px}
+.tarjeta{background:#fff;border:1px solid var(--borde);border-radius:10px;padding:16px;margin-bottom:14px}
+.tarjeta h2{margin:0 0 8px;font-size:19px}
+label{display:block;margin:10px 0 4px;font-weight:bold;font-size:15px}
+input,select,textarea{width:100%;padding:11px;font-size:17px;border:1px solid var(--borde);border-radius:8px;font-family:inherit}
+button.btn{background:var(--verde);color:#fff;border:0;border-radius:8px;padding:12px 18px;font-size:17px;cursor:pointer;min-height:46px}
+button.btn.sec{background:#fff;color:var(--verde);border:2px solid var(--verde)}button.btn.peligro{background:var(--rojo)}
+button.btn.azul{background:var(--azul)}button.btn:disabled{background:#94a3b8;cursor:not-allowed}
+.fila{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.fila>*{flex:1}
+.msg{padding:10px 12px;border-radius:8px;margin:10px 0;display:none}.msg.ok{background:var(--verde2);color:#14532d;display:block}
+.msg.error{background:#fee2e2;color:#7f1d1d;display:block}.msg.aviso{background:#fef9c3;color:#713f12;display:block}
+.grande{font-size:56px;font-weight:bold;color:var(--verde);text-align:center;margin:4px 0}
+.centro{text-align:center}.gris{color:var(--gris);font-size:15px}
+table{width:100%;border-collapse:collapse;background:#fff;font-size:15px}th,td{padding:8px;border-bottom:1px solid var(--borde);text-align:left}
+th{background:#f1f5f9}tr.siguiente{background:#ecfdf5}
+.chip{display:inline-block;padding:3px 9px;border-radius:12px;font-size:13px;font-weight:bold}
+.Asignado{background:#dbeafe;color:#1e3a8a}.Atendido{background:var(--verde2);color:#14532d}.NoAsistio{background:#fee2e2;color:#7f1d1d}
+.Cancelado,.CanceladoNovedad{background:#e5e7eb;color:#374151}
+.contadores{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.contadores div{background:#fff;border:1px solid var(--borde);border-radius:8px;padding:8px;text-align:center}
+.contadores b{display:block;font-size:24px}
+dialog{border:0;border-radius:12px;max-width:420px;width:92%;padding:20px}dialog::backdrop{background:rgba(0,0,0,.45)}
+.acciones button{padding:6px 10px;font-size:14px;min-height:auto;margin:2px}
+@media(max-width:640px){.contadores{grid-template-columns:repeat(3,1fr)}td.opc{min-width:120px}}

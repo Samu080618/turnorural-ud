@@ -1,0 +1,25 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TurnoRural - Pedir turno</title><link rel="stylesheet" href="/css/estilos.css"></head>
+<body><header><h1>TurnoRural</h1><nav><span id="nombreUsuario"></span><a href="/paciente/">Pedir turno</a><a href="/paciente/mi-turno.html">Mi turno</a><a href="/paciente/historial.html">Historial</a><button id="btnSalir">Cerrar sesión</button></nav></header><main>
+<div class="tarjeta"><h2>Cupos disponibles</h2><p class="gris">Elige el día en que quieres ser atendido. Se muestran los próximos 7 días.</p>
+<div id="msg" class="msg"></div><div id="lista">Cargando…</div></div>
+<dialog id="dlg"><h2>Confirmar turno</h2><p id="dlgTxt"></p><div class="fila"><button class="btn sec" id="no">Volver</button><button class="btn" id="si">Sí, pedir turno</button></div></dialog>
+<div class="tarjeta" id="ok" style="display:none"><h2>¡Turno asignado!</h2><div class="grande" id="num"></div><p class="centro" id="det"></p><p class="centro"><a href="/paciente/mi-turno.html">Ver mi posición en la fila</a></p></div>
+</main><script src="/js/comun.js"></script><script>
+let elegida = null;
+async function cargar() {
+  const l = await api('GET', '/jornadas/disponibles');
+  if (!l.length) { lista.innerHTML = '<p>No hay jornadas programadas en los próximos 7 días.</p>'; return; }
+  lista.innerHTML = '<table><tr><th>Día</th><th>Puesto</th><th>Horario</th><th>Cupos libres</th><th></th></tr>' + l.map((j) => `<tr>
+    <td>${fechaLarga(j.fecha)}</td><td>${esc(j.puesto)}</td><td>${j.horaInicio} a ${j.horaFin}</td>
+    <td>${j.estado === 'Cancelada' ? '<span class="chip Cancelado">Cancelada</span>' : `<b>${j.cuposDisponibles}</b> de ${j.cuposTotales}`}${j.novedad ? `<br><small class="gris">Aviso: ${esc(j.novedad)}</small>` : ''}</td>
+    <td>${j.disponible ? `<button class="btn" onclick='pedir(${JSON.stringify(j)})'>Pedir turno</button>` : `<button class="btn" disabled>${j.estado === 'Abierta' ? 'Sin cupos' : 'No disponible'}</button>`}</td></tr>`).join('') + '</table>';
+}
+function pedir(j) { elegida = j; dlgTxt.textContent = `¿Pedir turno para el ${fechaLarga(j.fecha)} en ${j.puesto} (${j.horaInicio} a ${j.horaFin})?`; dlg.showModal(); }
+no.onclick = () => dlg.close();
+si.onclick = async () => { dlg.close(); ocultar('msg');
+  try { const t = await api('POST', '/turnos', { idJornada: elegida.idJornada });
+    ok.style.display = ''; num.textContent = 'No. ' + t.numero;
+    det.textContent = `${fechaLarga(t.fecha)} · ${t.puesto} · hora aproximada ${t.horaEstimada}` + (t.smsEnviado ? '. Te enviamos un SMS de confirmación.' : '. No pudimos enviar el SMS, pero tu turno quedó guardado.');
+    cargar(); } catch (e) { mostrar('msg', e.message, 'error'); cargar(); } };
+iniciarSesionSegura('Paciente').then(cargar);
+</script></body></html>
